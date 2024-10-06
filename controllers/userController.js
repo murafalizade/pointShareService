@@ -59,7 +59,7 @@ exports.getProfileInfo = async (req, res) => {
 
 // Get Close Users (within 100 meters)
 exports.getCloseUsers = async (req, res) => {
-    // try {
+    try {
         const { latitude, longitude } = req.body;
 
         const closeUsers = await User.find({
@@ -74,9 +74,9 @@ exports.getCloseUsers = async (req, res) => {
         }).select('-password');
 
         res.json(closeUsers);
-    // } catch (error) {
-    //     res.status(500).json({ error});
-    // }
+    } catch (error) {
+        res.status(500).json({ error});
+    }
 };
 
 // Get Top Ranked Users (Top 10 by points in the same country)
@@ -214,7 +214,7 @@ exports.givePoint = async (req, res) => {
         }
 
         // Add points to the target user
-        targetUser.point += points;
+        targetUser.point = (targetUser + points) / 2;
         await targetUser.save();
 
         res.json({ message: `Successfully gave ${points} points to ${targetUser.username}` });
