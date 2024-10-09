@@ -2,6 +2,7 @@ const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const PointHistory = require("../models/pointHistory");
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -84,16 +85,28 @@ exports.getTopRanked = async (req, res) => {
     try {
         const { country } = req.query;
 
+        // Check if country is provided in the query
+        if (!country) {
+            return res.status(400).json({ error: 'Country is required' });
+        }
+
+        // Fetch top-ranked users based on the country, sorted by points in descending order
         const topRankedUsers = await User.find({ country })
             .sort({ point: -1 })
             .limit(10)
-            .select('-password');
+            .select('-password'); // Exclude the password field
+
+        if (topRankedUsers.length === 0) {
+            return res.status(404).json([]);
+        }
 
         res.json(topRankedUsers);
     } catch (error) {
+        console.error('Error fetching top-ranked users:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };
+
 
 // Update My Location
 exports.updateMyLocation = async (req, res) => {
@@ -219,6 +232,51 @@ exports.givePoint = async (req, res) => {
 
         res.json({ message: `Successfully gave ${points} points to ${targetUser.username}` });
     } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// get History
+exports.getHistory = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        // Find all history where the user is either the sender or the recipient
+        const history = await PointHistory.find({
+            $or: [
+                { senderUser: userId }, // User gave points
+                { recipientUser: userId } // User received points
+            ]
+        }).sort({ createdAt: -1 }); // Sort by most recent
+
+        // Populate usernames and classify whether it's 'given' or 'received'
+        const enrichedHistory = await Promise.all(history.map(async (entry) => {
+            if (entry.senderUser === userId) {
+                // User gave points
+                const recipient = await User.findById(entry.recipientUser);
+                return {
+                    username: recipient.username,
+                    userId: recipient._id,
+                    point: entry.point,
+                    type: 'given', // Specify that it's a "given" transaction
+                    date: entry.createdAt
+                };
+            } else {
+                // User received points
+                const sender = await User.findById(entry.senderUser);
+                return {
+                    username: sender.username,
+                    userId: sender._id,
+                    point: entry.point,
+                    type: 'received', // Specify that it's a "received" transaction
+                    date: entry.createdAt
+                };
+            }
+        }));
+        console.log("history", enrichedHistory);
+        res.status(200).json(enrichedHistory);
+    } catch (error) {
+        console.error('Error fetching history:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };

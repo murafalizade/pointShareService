@@ -1,19 +1,28 @@
 const mongoose = require('mongoose');
 
-const PointHistory = new mongoose.Schema({
+const pointHistorySchema = new mongoose.Schema({
+    // your schema fields here
+    senderUser: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    recipientUser: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
     point: {
         type: Number,
         required: true,
     },
-    senderUser:{
-        type: String,
-        required: true,
+    createdAt: {
+        type: Date,
+        default: Date.now,
     },
-    recipientUser: {
-        type: String,
-        required: true,
-    },
-    createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model('PointHistory', PointHistory);
+// Check if the model already exists before defining it
+const PointHistory = mongoose.models.PointHistory || mongoose.model('PointHistory', pointHistorySchema);
+
+module.exports = PointHistory;

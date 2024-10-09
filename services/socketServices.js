@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const PointHistory = require('../models/PointHistory'); // Import PointHistory model
 const jwt = require("jsonwebtoken");
 
 const socketUsers = {}; // Store connected users by their user ID
@@ -23,7 +24,7 @@ const handleConnection = (ws) => {
 
     // Register event listeners
     ws.on('updateMyLocation', (userInfo) => handleUpdateLocation(ws, user.userId, userInfo));
-    ws.on('givePoint', (pointInfo) => handleGivePoint(ws, pointInfo));
+    ws.on('givePoint', (pointInfo) => handleGivePoint(ws, user.userId, pointInfo));
     ws.on('getCloseUser', (location) => handleGetCloseUser(ws, user.userId, location));
 
     ws.on('disconnect', () => handleDisconnection(user));
@@ -74,7 +75,8 @@ const handleUpdateLocation = async (ws, userId, userInfo) => {
             { new: true }
         ).select('-password');
 
-        ws.emit("myUser", updatedUser);
+            console.log(updatedUser);
+        ws.emit("myUserLocation", updatedUser);
     } catch (error) {
         console.error('Error updating location:', error);
         closeConnection(ws, 'Error updating location');
@@ -82,7 +84,7 @@ const handleUpdateLocation = async (ws, userId, userInfo) => {
 };
 
 // Handle giving points to a user
-const handleGivePoint = async (ws, pointInfo) => {
+const handleGivePoint = async (ws,userId, pointInfo) => {
     const { targetUserId, points } = pointInfo;
 
     if (points <= 0) {
@@ -97,15 +99,24 @@ const handleGivePoint = async (ws, pointInfo) => {
             return;
         }
 
-        const givingUser = await User.findById(ws.id);
+        const givingUser = await User.findById(userId);
         if (!givingUser) {
             closeConnection(ws, 'Giving user not found');
             return;
         }
 
+        // Update the target user's points (average with given points)
         targetUser.point = (targetUser.point + points) / 2;
         await targetUser.save();
 
+        // Log the point transaction in PointHistory
+        const pointHistory = new PointHistory({
+            point: points,
+            senderUser: givingUser.id, // Use IDs for tracking
+            recipientUser: targetUser.id,
+        });
+        await pointHistory.save(); // Save the point history entry
+        // Notify the target user if they're connected
         const targetSocketId = socketUsers[targetUser.id];
         if (targetSocketId) {
             ws.to(targetSocketId).emit("notification", {
@@ -120,10 +131,11 @@ const handleGivePoint = async (ws, pointInfo) => {
     }
 };
 
+
 // Handle fetching nearby users within 100 meters
 const handleGetCloseUser = async (ws, userId, location) => {
     const { latitude, longitude } = location;
-    console.log(location, userId)
+
     try {
         const closeUsers = await User.find({
             location: {

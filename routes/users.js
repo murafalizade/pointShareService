@@ -1,5 +1,7 @@
 const express = require('express');
-const { register, login, getProfileInfo, getCloseUsers, getTopRanked, updateMyLocation, updateMyProfile, changePassword, forgetPassword, givePoint } = require('../controllers/userController');
+const { register, login, getProfileInfo, getCloseUsers, getTopRanked, updateMyLocation, updateMyProfile, changePassword, forgetPassword, givePoint,
+    getHistory
+} = require('../controllers/userController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -254,6 +256,9 @@ router.post('/forget-password', forgetPassword);
  *         description: Server error
  */
 router.post('/give-point', authMiddleware, givePoint);
+
+router.get('/point-history', authMiddleware, getHistory);
+
 
 
 module.exports = router;
