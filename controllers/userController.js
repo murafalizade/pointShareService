@@ -95,12 +95,7 @@ exports.getTopRanked = async (req, res) => {
             .sort({ point: -1 })
             .limit(10)
             .select('-password'); // Exclude the password field
-
-        if (topRankedUsers.length === 0) {
-            return res.status(404).json([]);
-        }
-
-        res.json(topRankedUsers);
+        res.status(200).json(topRankedUsers);
     } catch (error) {
         console.error('Error fetching top-ranked users:', error);
         res.status(500).json({ error: 'Server error' });
@@ -134,19 +129,20 @@ exports.updateMyLocation = async (req, res) => {
 
 // Update My Profile
 exports.updateMyProfile = async (req, res) => {
-    try {
-        const { username, email, country } = req.body;
+    // try {
+        console.log(req.body)
+        const { username, country } = req.body;
 
         const updatedUser = await User.findByIdAndUpdate(
             req.userId,
-            { $set: { username, email, country } },
+            { $set: { username, country } },
             { new: true }
         ).select('-password');
 
         res.json(updatedUser);
-    } catch (error) {
-        res.status(500).json({ error: 'Server error' });
-    }
+    // } catch (error) {
+    //     res.status(500).json({ error: error });
+    // }
 };
 
 // Change Password
@@ -258,7 +254,6 @@ exports.getHistory = async (req, res) => {
                     username: recipient.username,
                     userId: recipient._id,
                     point: entry.point,
-                    type: 'given', // Specify that it's a "given" transaction
                     date: entry.createdAt
                 };
             } else {
@@ -268,12 +263,10 @@ exports.getHistory = async (req, res) => {
                     username: sender.username,
                     userId: sender._id,
                     point: entry.point,
-                    type: 'received', // Specify that it's a "received" transaction
                     date: entry.createdAt
                 };
             }
         }));
-        console.log("history", enrichedHistory);
         res.status(200).json(enrichedHistory);
     } catch (error) {
         console.error('Error fetching history:', error);

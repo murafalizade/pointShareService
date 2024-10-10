@@ -119,8 +119,8 @@ const handleGivePoint = async (ws,userId, pointInfo) => {
         // Notify the target user if they're connected
         const targetSocketId = socketUsers[targetUser.id];
         if (targetSocketId) {
-            ws.to(targetSocketId).emit("notification", {
-                message: `${givingUser.name} has given you ${points} points!`,
+            ws.emit("notification", {
+                message: `${givingUser.username} has given you ${points} points!`,
                 pointsReceived: points,
                 totalPoints: targetUser.point,
             });
