@@ -74,9 +74,6 @@ const handleUpdateLocation = async (ws, userId, userInfo) => {
             },
             { new: true }
         ).select('-password');
-
-            console.log(updatedUser);
-        ws.emit("myUserLocation", updatedUser);
     } catch (error) {
         console.error('Error updating location:', error);
         closeConnection(ws, 'Error updating location');
@@ -119,7 +116,7 @@ const handleGivePoint = async (ws,userId, pointInfo) => {
         // Notify the target user if they're connected
         const targetSocketId = socketUsers[targetUser.id];
         if (targetSocketId) {
-            ws.emit("notification", {
+            ws.to(targetSocketId).emit("notification", {
                 message: `${givingUser.username} has given you ${points} points!`,
                 pointsReceived: points,
                 totalPoints: targetUser.point,
