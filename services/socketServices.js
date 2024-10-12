@@ -1,5 +1,5 @@
 const User = require('../models/user');
-const PointHistory = require('../models/PointHistory'); // Import PointHistory model
+const PointHistory = require('../models/pointHistory'); // Import PointHistory model
 const jwt = require("jsonwebtoken");
 
 const socketUsers = {}; // Store connected users by their user ID
