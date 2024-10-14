@@ -18,8 +18,8 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:5173',  // Your frontend URL
-        methods: ['GET', 'POST'],
+        origin: 'https://point-share.netlify.app',
+        methods: ['GET', 'POST', "PUT", "DELETE"],
         credentials: true,  // Allow credentials (cookies, etc.)
     },
 });
@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use('/api-docs', serve, setup(swaggerSpec));
 app.use(cors({
-    origin: 'http://localhost:5173', // Adjust this to your frontend's URL
+    origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
 }))
@@ -40,7 +40,7 @@ connectDB()
     })
     .catch(err => {
         console.error('MongoDB connection failed:', err);
-        process.exit(1);  // Exit process with failure
+        process.exit(1);
     });
 
 app.use('/api/v1/users', users);
